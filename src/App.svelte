@@ -1,61 +1,119 @@
 <script>
-	let input = "";
 
-	let output = "";
+	let input2 = "";
 
-	function handleClick() {
-		console.log("f", input)
-		query({"inputs": input}).then((response) => {
-			output = response[0]['generated_text']
-			console.log(output);
+	let output2 = "";
+	let loading = "";
+
+	let temp = 1;
+
+	function handleClick2() {
+		loading = "Generating output...";
+		output2 = "";
+		console.log("Gen 2", input2)
+		query2({
+			"inputs": input2,
+			"parameters": {
+				"max_length": 1200,
+				// "top_k": temp
+			}
+		}).then((response) => {
+			loading = ""
+			if (Object.keys(response).includes('error')) {
+				console.log("There's been an error")
+				output2 = "API is starting up, please try again in a minute."
+			}
+			else {
+				console.log('response', Object.values(response[0])[0]);
+				output2 = Object.values(response[0])[0].replaceAll("<n>", "\n").split("\n")
+			}
 		});
-
-		// query(input)
 	};
 
-	// async function query(input) {
-	// 	const response = await fetch(
-	// 		"https://api-inference.huggingface.co/models/theojolliffe/pegasus-cnn_dailymail-finetuned-roundup",
-	// 		{
-	// 			headers: { Authorization: "Bearer xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" },
-	// 			method: "POST",
-	// 			body: JSON.stringify({"inputs": input}),
-	// 		}
-	// 	);
-	// 	const result = await response.json();
-	// 	console.log(JSON.stringify(result));
-	// 	// return result;
-	// }
-
-	async function query(data) {
+	async function query2(data) {
 		const response = await fetch(
-			"https://api-inference.huggingface.co/models/theojolliffe/pegasus-cnn_dailymail-finetuned-roundup",
+			selectedmodel.url,
 			{
 				headers: { Authorization: "Bearer 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" },
 				method: "POST",
 				body: JSON.stringify(data),
 			}
-		);
+		)
 		const result = await response.json();
 		return result;
 	}
 
+	let models = [
+		{ r2: 34.0, loss: 0.86, text: 'theojolliffe/bart-cnn-science-v3-e3', url: 'https://api-inference.huggingface.co/models/theojolliffe/bart-cnn-science-v3-e3' },
+		{ r2: 33.5, loss: 0.83, text: 'theojolliffe/bart-cnn-science-v3-e4', url: 'https://api-inference.huggingface.co/models/theojolliffe/bart-cnn-science-v3-e4' },
+		{ r2: 35.5, loss: 0.81, text: 'theojolliffe/bart-cnn-science-v3-e5', url: 'https://api-inference.huggingface.co/models/theojolliffe/bart-cnn-science-v3-e5' },
+		{ r2: 35.0, loss: 0.81, text: 'theojolliffe/bart-cnn-science-v3-e6', url: 'https://api-inference.huggingface.co/models/theojolliffe/bart-cnn-science-v3-e6' },
+		{ r2: 35.1, loss: 0.79, text: 'theojolliffe/bart-large-cnn-finetuned-roundup-4-4', url: 'https://api-inference.huggingface.co/models/theojolliffe/bart-large-cnn-finetuned-roundup-4-4' },
+		{ r2: 37.4, loss: 0.79, text: 'theojolliffe/bart-large-cnn-finetuned-roundup-4-8', url: 'https://api-inference.huggingface.co/models/theojolliffe/bart-large-cnn-finetuned-roundup-4-8' },
+	]
+	let selectedmodel
 
-
+	$: console.log('selectedmodel', selectedmodel)
 
 </script>
 
-<textarea bind:value={input} placeholder="Copy and paste text from a statistical bulletin"></textarea>
+<div style="height: 50px"></div>
 
+<div style="width:680px; margin: auto">
+
+<h1>Automatic Roundup</h1>
+<!-- <textarea bind:value={input} placeholder="Copy and paste text from a statistical bulletin"></textarea>
 <br>
-
 <button on:click={handleClick}>
 	Summarize
 </button>
-
 <p>
 	{output}
 </p>
+
+<br>
+<br> -->
+
+<textarea bind:value={input2} placeholder="Copy and paste text from a statistical bulletin"></textarea>
+<br>
+<span style="float: left; margin: 8px;">Model: </span>
+<form>
+	<select bind:value={selectedmodel}>
+		{#each models as selectedmodel}
+			<option value={selectedmodel}>
+				{selectedmodel.text + ", loss: " + selectedmodel.loss + ", rouge-2: "+selectedmodel.r2}
+			</option>
+		{/each}
+	</select>
+</form>
+<br>
+<!-- <label>
+	<p>Temperature: {temp}</p>
+	<input type=range bind:value={temp} min=0 max=100>
+</label> -->
+<br>
+<button on:click={handleClick2}>
+	Summarise
+</button>
+<p>
+	{loading}
+</p>
+<p>
+	{#if output2 == "API is starting up, please try again in a minute."}
+		<p>API is starting up, please try again in a minute...</p>
+	{:else}
+		{#each output2 as sent, i}
+			{#if ((i == 0)&(sent.length<100))}
+				<h2>{sent}</h2>
+			{:else}
+				<p>{sent}</p>
+			{/if}
+		{/each}
+	{/if}
+</p>
+
+</div>
+<div style="height: 50px"></div>
 
 <style>
 	textarea {
